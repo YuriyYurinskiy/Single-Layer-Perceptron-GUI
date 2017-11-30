@@ -14,7 +14,7 @@ public class Perceptron {
     private int n;
     private List<Point> points;
 
-    private double c = 1;
+    private double c;
 
     private double[][] weights;
 
@@ -24,10 +24,11 @@ public class Perceptron {
         return history;
     }
 
-    public Perceptron(int n, List<Point> points) {
+    public Perceptron(int n, List<Point> points, double c) {
         this.n = n;
         this.points = points;
         this.weights = new double[n][3];
+        this.c = c;
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++)
                 this.weights[i][j] = 0;
@@ -58,14 +59,17 @@ public class Perceptron {
                 error = true;
             }
         }
-        history.add(weights);
+        double[][] temp = new double[n][3];
+        for (int i=0; i<n; i++)
+            System.arraycopy(weights[i], 0, temp[i], 0, 3);
+        history.add(temp);
         return error;
     }
 
     private boolean check(double[] out, int type) {
         if (out[type] < 0) return false;
         for (int i = 0; i < n; i++) {
-            if (i == type && out[type] >= 0) {}
+            if (i == type && out[type] >= 0);
             else if (out[i] >= 0) return false;
         }
 
@@ -97,23 +101,25 @@ public class Perceptron {
         do {
             flag = true;
             for (Point point : points) {
-                Main.logLn("\nШаг обучения " + step);
+                Main.logLn("Шаг обучения " + step);
                 log(weights, "w(" + step + ")\n");
                 log(point, "x(" + step + ")\n");
-                if (changeWeights(point, getD(point, step)))
+                if (changeWeights(point, getD(point, step))) {
+                    Main.logLn("Имелись ошибки на шаге " + step + "\n");
                     error = 0;
-                else {
+                } else {
+                    Main.logLn("Ошибок не было уже " + (error + 1) + " раз подряд\n");
                     error++;
-                    if (error > points.size()) {
+                    if (error >= points.size()) {
                         flag = false;
                         break;
                     }
                 }
                 step++;
             }
-        } while (flag && step < 100);
+        } while (flag && step < 100000);
 
-        Main.log("Обучение закончено, спустя " + step + " шагов");
+        Main.logLn("Обучение закончено, спустя " + step + " шагов\n\n");
     }
     // Вывод в лог
     private void log(Point point, String startString) {

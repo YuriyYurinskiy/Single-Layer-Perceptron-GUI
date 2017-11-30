@@ -5,6 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import ru.yuriyyurinskiy.perceptron.Entity.Line;
 import ru.yuriyyurinskiy.perceptron.Entity.Point;
 
 /**
@@ -18,14 +19,15 @@ public class DrawPanel extends JPanel {
             height = 380,
             width_0 = 20,
             height_0 = 20,
-            width_1 = width + width_0,
+            width_1 = width - width_0,
             height_1 = height + height_0,
 
-            x_0 = width / 2 + width_0,
+            x_0 = width / 2,
             y_0 = height / 2 + height_0,
             tab = 20;
 
     private List<Point> points;
+    private List<Line> lines = new ArrayList<>();
 
     public DrawPanel() {
         this(new ArrayList<>());
@@ -44,24 +46,51 @@ public class DrawPanel extends JPanel {
         drawBorder(g);
         drawCoordinates(g);
 
-        for (ru.yuriyyurinskiy.perceptron.Entity.Point point: points) {
-            drawPoint(g, point);
+        for (int i = 0; i < points.size(); i++) {
+            drawPoint(g, points.get(i));
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            drawLine(g, lines.get(i));
         }
     }
 
-    public void addPoint(ru.yuriyyurinskiy.perceptron.Entity.Point point) {
+    public void addPoint(Point point) {
         points.add(point);
         repaint();
     }
 
-    public void addAllPoints(List<ru.yuriyyurinskiy.perceptron.Entity.Point> points) {
+    public void addAllPoints(List<Point> points) {
         this.points.addAll(points);
         repaint();
     }
 
-    public void clearPoint() {
+    public void clearPoints() {
         points.clear();
         repaint();
+    }
+
+    public void addLine(Line line) {
+        this.lines.add(line);
+        repaint();
+    }
+
+    public void addAllLines(List<Line> lines) {
+        this.lines.addAll(lines);
+        repaint();
+    }
+
+    public void clearLines() {
+        lines.clear();
+        repaint();
+    }
+
+    public double getBorderX() {
+        return (width_1 - x_0) / tab;
+    }
+
+    public double getBorderY() {
+        return (height_1 - y_0) / tab;
     }
 
     private void drawBorder(Graphics g) {
@@ -91,7 +120,35 @@ public class DrawPanel extends JPanel {
     }
 
     private void drawPoint(Graphics g, Point point) {
-        switch (point.getType()) {
+        setDrawColor(g,point.getType());
+
+        g.fillOval(
+                (int) (x_0 + tab * point.getX()) - 2,
+                (int) (y_0 - tab * point.getY()) - 2,
+                4,
+                4
+        );
+        g.drawOval(
+                (int) (x_0 + tab * point.getX()) - 2,
+                (int) (y_0 - tab * point.getY()) - 2,
+                4,
+                4
+        );
+    }
+
+    private void drawLine(Graphics g, Line line) {
+        setDrawColor (g,line.getType());
+
+        g.drawLine(
+                (int) (x_0 + tab * line.getX_1()),
+                (int) (y_0 - tab * line.getY_1()),
+                (int) (x_0 + tab * line.getX_2()),
+                (int) (y_0 - tab * line.getY_2())
+        );
+    }
+
+    private void setDrawColor(Graphics g, int type) {
+        switch (type) {
             case 0:
                 g.setColor(Color.BLUE);
                 break;
@@ -105,17 +162,5 @@ public class DrawPanel extends JPanel {
                 g.setColor(Color.GREEN);
                 break;
         }
-        g.fillOval(
-                (int) (x_0 + tab * point.getX()) - 2,
-                (int) (y_0 - tab * point.getY()) - 2,
-                4,
-                4
-        );
-        g.drawOval(
-                (int) (x_0 + tab * point.getX()) - 2,
-                (int) (y_0 - tab * point.getY()) - 2,
-                4,
-                4
-        );
     }
 }
