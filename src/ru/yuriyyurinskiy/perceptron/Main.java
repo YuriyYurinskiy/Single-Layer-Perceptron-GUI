@@ -13,7 +13,7 @@ import ru.yuriyyurinskiy.perceptron.Entity.Point;
 
 public class Main extends JFrame {
     private final int width = 800;
-    private final int height = 600;
+    private final int height = 800;
 
     private List<Point> points = new ArrayList<>();
 
@@ -22,16 +22,17 @@ public class Main extends JFrame {
             westPanel = new JPanel();
     private DrawPanel drawPanel = new DrawPanel();
 
-    private JTextArea logging = new JTextArea(),
-            inputData = new JTextArea();
-
-    private int step = 1;
-
+    private static JTextArea logging = new JTextArea();
+    private JTextArea inputData = new JTextArea();
 
     private JButton btnStart = new JButton("Начать обучение"),
             btnDrawPoint = new JButton("Построить точки"),
             btnClear = new JButton("Очистить всё"),
-            btnClearDraw = new JButton("Очистить построения");
+            btnClearDraw = new JButton("Очистить построения"),
+            btnClearLog = new JButton("Отчистить лог");
+
+    private int step = 1;
+    private Perceptron perceptron;
 
     private Main() {
         super("Перцептрон");
@@ -40,6 +41,8 @@ public class Main extends JFrame {
         initLogging();
         initMainLayout();
         initButton();
+
+        inputData.setText("0 0 0\n1 1 1\n-1 1 2");
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -54,7 +57,7 @@ public class Main extends JFrame {
 
         btnDrawPoint.addActionListener(e -> {
             if (inputData.getText().isEmpty()) {
-                log("Ничего не введено");
+                logLn("Ничего не введено");
                 return;
             }
 
@@ -67,21 +70,28 @@ public class Main extends JFrame {
                     double y = Double.valueOf(array[1]);
                     int type = Integer.valueOf(array[2]) % 3;
 
-                    points.add(new Point(x,y, type));
+                    points.add(new Point(x, y, type));
 
                     number_line++;
                 }
 
                 drawPanel.addAllPoints(points);
+                logLn("Точки построены");
+
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        perceptron = new Perceptron(3, points);
+                    }
+                });
+                t.start();
 
                 btnDrawPoint.setEnabled(false);
-
-                log("Точки построены");
 
                 btnStart.setEnabled(true);
                 btnClearDraw.setEnabled(true);
             } catch (Exception ex) {
-                log("Ошибка чтения данных в строке " + number_line);
+                logLn("Ошибка чтения данных в строке " + number_line);
             }
         });
 
@@ -89,13 +99,15 @@ public class Main extends JFrame {
             // TO DO
             try {
 
+                for (double[][] weight : perceptron.getHistory()) {
+
+                    step++;
+                }
+
                 if (points.size() < 2)
                     throw new IOException("mes");
-
-                log("Обучение шаг " + step);
-                step++;
             } catch (Exception ex) {
-                log("Ошибка на " + step + " шагу обучения");
+                logLn("Ошибка на " + step + " шагу построения");
                 step = 1;
                 btnStart.setText("Начать обучение");
                 btnStart.setEnabled(false);
@@ -114,7 +126,7 @@ public class Main extends JFrame {
             points.clear();
             drawPanel.clearPoint();
 
-            log("Область построений очищена");
+            logLn("Область построений очищена");
             btnDrawPoint.setEnabled(true);
         });
 
@@ -131,6 +143,10 @@ public class Main extends JFrame {
             btnStart.setEnabled(true);
             btnDrawPoint.setEnabled(true);
         });
+
+        btnClearLog.addActionListener(e -> {
+            logging.setText("");
+        });
     }
 
     private void initMainLayout() {
@@ -142,9 +158,9 @@ public class Main extends JFrame {
         westPanel.setLayout(new BoxLayout(westPanel, BoxLayout.PAGE_AXIS));
 
         westPanel.add(new JLabel("Введите паттерны"));
-        westPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        westPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         westPanel.add(new JScrollPane(inputData));
-        westPanel.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        westPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         inputData.setColumns(10);
 
         southPanel.setLayout(new FlowLayout());
@@ -153,11 +169,12 @@ public class Main extends JFrame {
         southPanel.add(btnClearDraw);
         southPanel.add(btnStart);
         southPanel.add(btnClear);
+        southPanel.add(btnClearLog);
     }
 
     private void initVerticalSplit() {
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setDividerLocation(height - 150);
+        splitPane.setDividerLocation(height - 350);
         splitPane.setTopComponent(mainPanel);
         splitPane.setBottomComponent(new JScrollPane(logging));
         getContentPane().add(splitPane);
@@ -171,14 +188,24 @@ public class Main extends JFrame {
         new Main();
     }
 
-    private void log(String message) {
-        logging.append(getTime());
-        logging.append(" ---- ");
-        logging.append(message);
-        logging.append("\n");
+    public static void logLn(String message) {
+        if (logging != null) {
+            logging.append(getTime());
+            logging.append(" ---- ");
+            logging.append(message);
+            logging.append("\n");
+        }
     }
 
-    private String getTime() {
+    public static void log(String message) {
+        if (logging != null) {
+            logging.append(getTime());
+            logging.append(" ---- ");
+            logging.append(message);
+        }
+    }
+
+    private static String getTime() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
         return sdf.format(cal.getTime());

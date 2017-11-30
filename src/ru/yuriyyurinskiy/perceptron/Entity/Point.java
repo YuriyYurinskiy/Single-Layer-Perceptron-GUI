@@ -16,6 +16,15 @@ public class Point {
         this.type = type;
     }
 
+    public double get(int i) {
+        if (i==0)
+            return x;
+        if (i==1)
+            return y;
+        else
+            return 0;
+    }
+
     public double getX() {
         return x;
     }
