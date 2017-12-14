@@ -1,36 +1,36 @@
-package ru.yuriyyurinskiy.perceptron;
+package ru.yuriyyurinskiy.perceptron.Component;
+
+import ru.yuriyyurinskiy.perceptron.Entity.Line;
+import ru.yuriyyurinskiy.perceptron.Entity.Point;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import ru.yuriyyurinskiy.perceptron.Component.DrawPanel;
-import ru.yuriyyurinskiy.perceptron.Entity.Line;
-import ru.yuriyyurinskiy.perceptron.Entity.Point;
-
-public class Main extends JFrame {
+public abstract class DrawingJFrame extends JFrame {
     private final int width = 800;
-    private final int height = 800;
+    private final int height = 700;
 
-    private List<Point> points = new ArrayList<>();
+    protected List<Point> points = new ArrayList<>();
 
-    private JPanel mainPanel = new JPanel(),
-            southPanel = new JPanel(),
-            westPanel = new JPanel();
-    private DrawPanel drawPanel = new DrawPanel();
+    private JPanel mainPanel = new JPanel();
+    private JPanel southPanel = new JPanel();
+    protected JPanel westPanel = new JPanel();
+    protected DrawPanel drawPanel = new DrawPanel();
 
+    private static JScrollPane pane;
     private static JTextArea logging = new JTextArea();
-    private JTextArea inputData = new JTextArea();
-    private JTextField inputC = new JTextField("1");
+    protected JTextArea inputData = new JTextArea();
 
-    private JButton btnStart = new JButton("Начать построение"),
+    protected JTextField inputC = new JTextField("1");
+
+    protected JButton btnStart = new JButton("Начать построение"),
             btnStartToEnd = new JButton("Построить"),
             btnDrawPoint = new JButton("Построить точки"),
             btnClear = new JButton("Очистить всё"),
@@ -39,32 +39,16 @@ public class Main extends JFrame {
             btnSaveData = new JButton("Сохранить данные"),
             btnLoadData = new JButton("Загрузить данные");
 
-    private int step = 1;
-    private Perceptron perceptron;
+    protected int step = 1;
 
-    private Main() {
-        super("Перцептрон");
+    protected abstract Thread threadCalculation();
 
-        initVerticalSplit();
-        initLogging();
-        initMainLayout();
-        initButton();
+    protected abstract ActionListener btnStartListener();
 
-        inputData.setText("0 0 0\n1 1 1\n-1 1 2");
+    protected abstract ActionListener btnStartToEndListener();
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setResizable(false);
-        setSize(width, height);
-        setVisible(true);
-    }
-
-    private void initButton() {
-        btnStart.setEnabled(false);
-        btnClear.setEnabled(false);
-        btnClearDraw.setEnabled(false);
-        btnStartToEnd.setEnabled(false);
-
-        btnDrawPoint.addActionListener(e -> {
+    protected ActionListener btnDrawPointListener() {
+        return e -> {
             if (inputData.getText().isEmpty()) {
                 logLn("Ничего не введено");
                 return;
@@ -87,8 +71,9 @@ public class Main extends JFrame {
                 drawPanel.addAllPoints(points);
                 logLn("Точки построены");
 
-                Thread t = new Thread(() -> perceptron = new Perceptron(3, points, Double.valueOf(inputC.getText())));
-                t.start();
+                Thread thread = threadCalculation();
+                if (thread != null)
+                    thread.start();
 
                 btnDrawPoint.setEnabled(false);
 
@@ -98,76 +83,36 @@ public class Main extends JFrame {
             } catch (Exception ex) {
                 logLn("Ошибка чтения данных в строке " + number_line);
             }
-        });
+        };
+    }
 
-        btnStart.addActionListener(e -> {
-            // TO DO
-            try {
-                drawPanel.clearLines();
-                logLn("Построена матрицы сформированная на шаге " + step + " обучения");
-                double[][] weight = perceptron.getHistory().get(step - 1);
-                for (int i = 0; i < weight.length; i++) {
-                    Line line = makeLine(weight[i], i);
-                    if (line != null)
-                        drawPanel.addLine(line);
-                }
+    public DrawingJFrame(String string) {
+        super(string);
 
-                if (step >= perceptron.getHistory().size() - points.size()) {
-                    logLn("Положение прямых больше не менялось (" + step + " - " + (step + points.size()) + ")");
-                    btnStart.setText("Начать обучение");
-                    btnStart.setEnabled(false);
-                }
+        initVerticalSplit();
+        initLogging();
+        initMainLayout();
+        initButton();
 
-                step++;
-            } catch (Exception ex) {
-                logLn("Ошибка на " + step + " шагу построения");
-                step = 1;
-                btnStart.setText("Начать обучение");
-                btnStart.setEnabled(false);
-            }
+        inputData.setText("0 0 0\n1 1 1\n-1 1 2");
 
-            btnStart.setText("Следующий шаг");
-            btnClear.setEnabled(true);
-        });
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
+        setSize(width, height);
+        setVisible(true);
+    }
 
-        btnStartToEnd.addActionListener(e -> {
-            new Thread(() -> {
-                btnStart.setEnabled(false);
-                btnDrawPoint.setEnabled(false);
-                btnClearLog.setEnabled(false);
-                btnClear.setEnabled(false);
-                btnStartToEnd.setEnabled(false);
-                btnClearDraw.setEnabled(false);
+    private void initButton() {
+        btnStart.setEnabled(false);
+        btnClear.setEnabled(false);
+        btnClearDraw.setEnabled(false);
+        btnStartToEnd.setEnabled(false);
 
-                for (int k = 0; k < perceptron.getHistory().size() - points.size(); k++) {
-                    logLn("Построена матрицы сформированная на шаге " + (k+1) + " обучения");
-                    drawPanel.clearLines();
+        btnDrawPoint.addActionListener(btnDrawPointListener());
 
-                    double[][] weight = perceptron.getHistory().get(k);
-                    for (int i = 0; i < weight.length; i++) {
-                        Line line = makeLine(weight[i], i);
-                        if (line != null)
-                            drawPanel.addLine(line);
-                    }
+        btnStart.addActionListener(btnStartListener());
 
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
-                }
-                logLn("Положение прямых больше не менялось (" +
-                        (perceptron.getHistory().size() - points.size()) +
-                        " - " +
-                        (perceptron.getHistory().size() - points.size() + points.size()) +
-                        ")"
-                );
-
-                btnClear.setEnabled(true);
-                btnClearDraw.setEnabled(true);
-                btnClearLog.setEnabled(true);
-            }).start();
-        });
+        btnStartToEnd.addActionListener(btnStartToEndListener());
 
         btnClearDraw.addActionListener(e -> {
             btnClearDraw.setEnabled(false);
@@ -181,7 +126,7 @@ public class Main extends JFrame {
             drawPanel.clearLines();
             step = 1;
 
-            logLn("Область построений очищена");
+            logging.setText("Область построений очищена");
             btnDrawPoint.setEnabled(true);
         });
 
@@ -201,9 +146,7 @@ public class Main extends JFrame {
             btnDrawPoint.setEnabled(true);
         });
 
-        btnClearLog.addActionListener(e -> {
-            logging.setText("");
-        });
+        btnClearLog.addActionListener(e -> logging.setText(""));
 
         btnSaveData.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
@@ -283,13 +226,9 @@ public class Main extends JFrame {
 
     private void initVerticalSplit() {
         // Прокручен всегда вниз logging
-        JScrollPane pane = new JScrollPane(logging);
-        pane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-        });
-
+        pane = new JScrollPane(logging);
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setDividerLocation(height - 350);
+        splitPane.setDividerLocation(height - 250);
         splitPane.setTopComponent(mainPanel);
         splitPane.setBottomComponent(pane);
 
@@ -300,7 +239,7 @@ public class Main extends JFrame {
         logging.setEditable(false);
     }
 
-    private Line makeLine(double[] weight, int type) {
+    protected Line makeLine(double[] weight, int type) {
         double x_1, y_1, x_2, y_2;
         if (weight[0] == 0 && weight[1] == 0) {
             logLn("Не могу построить прямую типа " + type);
@@ -333,26 +272,32 @@ public class Main extends JFrame {
         return new Line(x_1, y_1, x_2, y_2, type);
     }
 
-    public static void main(String[] args) {
-        new Main();
-    }
-
     public static void logLn(String message) {
-        if (logging != null) {
-            logging.append(getTime());
-            logging.append(" ---- ");
-            logging.append(message);
-            logging.append("\n");
+        if (logging != null && pane != null) {
+            String sb = getTime() + " ---- " +
+                    message +
+                    "\n" +
+                    logging.getText();
+            logging.setText(sb);
+            pane.getVerticalScrollBar().getModel().setValue(
+                    pane.getVerticalScrollBar().getMinimum()
+            );
         }
     }
 
     public static void log(String message) {
-        if (logging != null) {
-            logging.append(getTime());
-            logging.append(" ---- ");
-            logging.append(message);
+        if (logging != null && pane != null) {
+            String sb = getTime() + " ---- " +
+                    message +
+                    logging.getText();
+            logging.setText(sb);
+            pane.getVerticalScrollBar().getModel().setValue(
+                    pane.getVerticalScrollBar().getMinimum()
+            );
         }
     }
+
+
 
     private static String getTime() {
         Calendar cal = Calendar.getInstance();

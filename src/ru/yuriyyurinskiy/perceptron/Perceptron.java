@@ -33,8 +33,8 @@ public class Perceptron {
             for (int j = 0; j < n; j++)
                 this.weights[i][j] = 0;
 
-        Main.logLn("Перцептрон инициализирован");
-        Main.logLn("Начинаем обучение");
+        DividePointsOnPlate.logLn("Перцептрон инициализирован");
+        DividePointsOnPlate.logLn("Начинаем обучение");
         study();
     }
 
@@ -101,14 +101,14 @@ public class Perceptron {
         do {
             flag = true;
             for (Point point : points) {
-                Main.logLn("Шаг обучения " + step);
+                DividePointsOnPlate.logLn("Шаг обучения " + step);
                 log(weights, "w(" + step + ")\n");
                 log(point, "x(" + step + ")\n");
                 if (changeWeights(point, getD(point, step))) {
-                    Main.logLn("Имелись ошибки на шаге " + step + "\n");
+                    DividePointsOnPlate.logLn("Имелись ошибки на шаге " + step + "\n");
                     error = 0;
                 } else {
-                    Main.logLn("Ошибок не было уже " + (error + 1) + " раз подряд\n");
+                    DividePointsOnPlate.logLn("Ошибок не было уже " + (error + 1) + " раз подряд\n");
                     error++;
                     if (error >= points.size()) {
                         flag = false;
@@ -119,7 +119,7 @@ public class Perceptron {
             }
         } while (flag && step < 100000);
 
-        Main.logLn("Обучение закончено, спустя " + step + " шагов\n\n");
+        DividePointsOnPlate.log("Обучение закончено, спустя " + step + " шагов\n\n");
     }
     // Вывод в лог
     private void log(Point point, String startString) {
@@ -128,7 +128,7 @@ public class Perceptron {
         stringBuilder.append(point.getX()).append("    ");
         stringBuilder.append(point.getY()).append("    ");
         stringBuilder.append(c);
-        Main.logLn(stringBuilder.toString());
+        DividePointsOnPlate.logLn(stringBuilder.toString());
     }
 
     // Вывод в лог
@@ -137,7 +137,7 @@ public class Perceptron {
         stringBuilder.append("\t");
         for (double item : out)
             stringBuilder.append(item).append("    ");
-        Main.logLn(stringBuilder.toString());
+        DividePointsOnPlate.logLn(stringBuilder.toString());
     }
 
     // Вывод в лог
@@ -149,6 +149,6 @@ public class Perceptron {
                 stringBuilder.append(item).append("    ");
             stringBuilder.append("\n");
         }
-        Main.log(stringBuilder.toString());
+        DividePointsOnPlate.log(stringBuilder.toString());
     }
 }
